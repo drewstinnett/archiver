@@ -8,9 +8,11 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"reflect"
 	"sort"
+	"sync/atomic"
 	"testing"
 )
 
@@ -52,6 +54,37 @@ var (
 	//go:embed testdata/unordered.zip
 	unorderZip []byte
 )
+
+func TestEmbeddedTar(t *testing.T) {
+	fn := "./testdata/bad.tar"
+	fh, err := os.Open(fn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s, err := os.Stat(fn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fsys := ArchiveFS{
+		Stream: io.NewSectionReader(fh, 0, s.Size()),
+		Format: Tar{},
+	}
+
+	var count int32
+	err = fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if count > 100 {
+			log.Fatal("Too many yo")
+		}
+		fmt.Fprintf(os.Stderr, "Path: %v File: %v Dir: %v\n", path, d.Name(), d.IsDir())
+		atomic.AddInt32(&count, 1)
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// log.Fatalf("%+v\n", "ding")
+}
 
 func ExampleArchiveFS_Stream() {
 	fsys := ArchiveFS{
