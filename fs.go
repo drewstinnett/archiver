@@ -598,7 +598,6 @@ func (f ArchiveFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	files = fillImplicit(files)
 	// Remove bogus "." entries that some tar files generate
 	files = removeSubdirDots(files)
-	fmt.Fprintf(os.Stderr, "%+v %v\n", name, files)
 	// and return early for dot file
 	if name == "." {
 		return openReadDir(name, files), nil
